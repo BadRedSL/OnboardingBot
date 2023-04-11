@@ -19,25 +19,3 @@ class EmployeesDialogForm(StatesGroup):
 
 class ProductsDialogForm(StatesGroup):
     products: State = State()
-
-    kids: State = State()
-
-    junior: State = State()
-
-    middle: State = State()
-
-    senior: State = State()
-
-    to_main: State = State()
-
-    program: State = State()
-
-    teachers: State = State()
-
-    price: State = State()
-
-    back: State = State()
-
-
-class OfficialDutiesDialogForm(StatesGroup):
-    official_duties: State = State()
