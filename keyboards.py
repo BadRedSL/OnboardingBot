@@ -2,50 +2,60 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 
 class JobTitleKeyboard:
-    __btn_admin = KeyboardButton("Администратор")
-    __btn_employee = KeyboardButton("Сотрудник")
+    buttons = {"btn_admin": "Администратор", "btn_employee": "Сотрудник"}
+    __btn_admin = KeyboardButton(buttons["btn_admin"])
+    __btn_employee = KeyboardButton(buttons["btn_employee"])
     job_title_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_admin,
                                                                  __btn_employee)
 
 
 class MainKeyboard:
-    __btn_about_office = KeyboardButton("Об офисе")
-    __btn_employees = KeyboardButton("Сотрудники")
-    __btn_about_company = KeyboardButton("О компании")
-    __btn_company_products = KeyboardButton("Продукты компании")
+    buttons = {"btn_about_office": "Об офисе", "btn_employees": "Сотрудники", "btn_about_company": "О компании",
+               "btn_company_products": "Продукты компании", "btn_official_duties": "Должностные обязанности"}
+    __btn_about_office = KeyboardButton(buttons["btn_about_office"])
+    __btn_employees = KeyboardButton(buttons["btn_employees"])
+    __btn_about_company = KeyboardButton(buttons["btn_about_company"])
+    __btn_company_products = KeyboardButton(buttons["btn_company_products"])
+    __btn_official_duties = KeyboardButton(buttons["btn_official_duties"])
     main_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_about_office,
                                                             __btn_employees,
                                                             __btn_about_company,
-                                                            __btn_company_products)
+                                                            __btn_company_products,
+                                                            __btn_official_duties)
 
 
 class AboutOfficeKeyboard:
-    __btn_office_video = KeyboardButton("Об офисе")
-    __btn_floor_plan = KeyboardButton("План офиса")
+    buttons = {"btn_office_video": "Видео об офисе", "btn_floor_plan": "План офиса"}
+    __btn_office_video = KeyboardButton(buttons["btn_office_video"])
+    __btn_floor_plan = KeyboardButton(buttons["btn_floor_plan"])
     about_office_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_office_video,
                                                                     __btn_floor_plan)
 
 
 class EmployeesKeyboard:
-    __btn_all_employees = KeyboardButton("Все сотрудники")
-    __btn_my_department = KeyboardButton("Мой отдел")
+    buttons = {"btn_all_employees": "Все сотрудники", "btn_my_department": "Мой отдел"}
+    __btn_all_employees = KeyboardButton(buttons["btn_all_employees"])
+    __btn_my_department = KeyboardButton(buttons["btn_my_department"])
     employees_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_all_employees,
                                                                  __btn_my_department)
 
 
 class CommonEmployeesKeyboard:
-    __btn_detail = KeyboardButton("Подробнее о сотруднике")
-    __btn_to_main = KeyboardButton("В главное меню")
+    buttons = {"btn_detail": "Подробнее о сотруднике", "btn_to_main": "В главное меню"}
+    __btn_detail = KeyboardButton(buttons["btn_detail"])
+    __btn_to_main = KeyboardButton(buttons["btn_to_main"])
     common_employees_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_detail,
                                                                         __btn_to_main)
 
 
 class CompanyProductsKeyboard:
-    __btn_kids = KeyboardButton("kids")
-    __btn_junior = KeyboardButton("junior")
-    __btn_middle = KeyboardButton("middle")
-    __btn_senior = KeyboardButton("senior")
-    __btn_to_main = KeyboardButton("В главное меню")
+    buttons = {"btn_kids": "kids", "btn_junior": "junior", "btn_middle": "middle",
+               "btn_senior": "senior", "btn_to_main": "В главное меню"}
+    __btn_kids = KeyboardButton(buttons["btn_kids"])
+    __btn_junior = KeyboardButton(buttons["btn_junior"])
+    __btn_middle = KeyboardButton(buttons["btn_middle"])
+    __btn_senior = KeyboardButton(buttons["btn_senior"])
+    __btn_to_main = KeyboardButton(buttons["btn_to_main"])
     company_products_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_kids,
                                                                         __btn_junior,
                                                                         __btn_middle,
@@ -54,10 +64,12 @@ class CompanyProductsKeyboard:
 
 
 class CommonProductKeyboard:
-    __btn_program = KeyboardButton("Программа")
-    __btn_teachers = KeyboardButton("Преподаватели")
-    __btn_price = KeyboardButton("Стоимость")
-    __btn_back = KeyboardButton("Назад")
+    buttons = {"btn_program": "Программа", "btn_teachers": "Преподаватели", "btn_price": "Стоимость",
+               "btn_back": "Назад"}
+    __btn_program = KeyboardButton(buttons["btn_program"])
+    __btn_teachers = KeyboardButton(buttons["btn_teachers"])
+    __btn_price = KeyboardButton(buttons["btn_price"])
+    __btn_back = KeyboardButton(buttons["btn_back"])
     common_product_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_program,
                                                                       __btn_teachers,
                                                                       __btn_price,
