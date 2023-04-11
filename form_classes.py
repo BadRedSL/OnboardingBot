@@ -2,6 +2,8 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
 class StartDialogForm(StatesGroup):
+    start: State = State()
+
     employee: State = State()
     full_name: State = State()
 
@@ -19,3 +21,9 @@ class EmployeesDialogForm(StatesGroup):
 
 class ProductsDialogForm(StatesGroup):
     products: State = State()
+
+
+class KnowledgeTestDialogForm(StatesGroup):
+    knowledge_test: State = State()
+
+    people_test: State = State()
