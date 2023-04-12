@@ -44,28 +44,17 @@ if __name__ == "__main__":
         # QUERY(__connection, query="""UPDATE public."Employee" SET id = id + 3000;""")
         #
         # QUERY(__connection, query="""DELETE FROM public."Employee" WHERE full_name='Samsung';""")
-        a = QUERY_GET(__connection,
-                      query=f"""SELECT full_name, competencies FROM public."Employee" WHERE true""",
-                      param=True)
-        print("\n".join([f"{i[0]} \t {i[1]}" for i in a]))
+        # a = QUERY_GET(__connection,
+        #               query=f"""SELECT full_name, competencies FROM public."Employee" WHERE true""",
+        #               param=True)
+        # print("\n".join([f"{i[0]} \t {i[1]}" for i in a]))
+        #
+        # b = QUERY_GET(__connection,
+        #               query=f"""SELECT * FROM public."Employee" WHERE full_name != '{"Галочкина Арина Юрьевна"}'""")
 
-        data = QUERY_GET(__connection,
-                      query=f"""SELECT * FROM public."Employee" WHERE full_name != '{"Галочкина Арина Юрьевна"}'""")
-        print(f"""
-ФИО:
-{data[5]}
-
-Компетенции:
-{data[2]}  
-    
-Должностные обязанности:
-{data[3]}
-
-Достижения:
-{data[6]} 
-     
-""")
-
+        person_ids = QUERY_GET(__connection,
+                         query=f"""SELECT id FROM public."Employee" """, param=True)
+        print(person_ids)
 
 
     except (Exception, Error) as error:
