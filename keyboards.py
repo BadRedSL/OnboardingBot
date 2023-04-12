@@ -51,8 +51,8 @@ class CommonEmployeesKeyboard:
 
 
 class CompanyProductsKeyboard:
-    buttons = {"btn_kids": "kids", "btn_junior": "junior", "btn_middle": "middle",
-               "btn_senior": "senior", "btn_to_main": "В главное меню"}
+    buttons = {"btn_kids": "Kids", "btn_junior": "Junior", "btn_middle": "Middle",
+               "btn_senior": "Senior", "btn_to_main": "В главное меню"}
     __btn_kids = KeyboardButton(buttons["btn_kids"])
     __btn_junior = KeyboardButton(buttons["btn_junior"])
     __btn_middle = KeyboardButton(buttons["btn_middle"])
