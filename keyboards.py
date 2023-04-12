@@ -11,19 +11,21 @@ class JobTitleKeyboard:
 class MainKeyboard:
     buttons = {"btn_about_office": "Об офисе", "btn_employees": "Сотрудники", "btn_about_company": "О компании",
                "btn_company_products": "Продукты компании", "btn_official_duties": "Должностные обязанности",
-               "btn_test_knowledge": "Проверить свои знания"}
+               "btn_test_knowledge": "Проверить свои знания", "btn_question": "Задать вопрос"}
     __btn_about_office = KeyboardButton(buttons["btn_about_office"])
     __btn_employees = KeyboardButton(buttons["btn_employees"])
     __btn_about_company = KeyboardButton(buttons["btn_about_company"])
     __btn_company_products = KeyboardButton(buttons["btn_company_products"])
     __btn_official_duties = KeyboardButton(buttons["btn_official_duties"])
     __btn_test_knowledge = KeyboardButton(buttons["btn_test_knowledge"])
+    __btn_question = KeyboardButton(buttons["btn_question"])
     main_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_about_office,
                                                             __btn_employees,
                                                             __btn_about_company,
                                                             __btn_company_products,
                                                             __btn_official_duties,
-                                                            __btn_test_knowledge)
+                                                            __btn_test_knowledge,
+                                                            __btn_question)
 
 
 class AboutOfficeKeyboard:
@@ -61,7 +63,6 @@ class CompanyProductsKeyboard:
     company_products_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_kids,
                                                                         __btn_junior,
                                                                         __btn_middle,
-                                                                        __btn_senior,
                                                                         __btn_to_main)
 
 
@@ -82,5 +83,4 @@ class KnowledgeTestKeyboard:
     buttons = {"btn_people_test": "Тема: сотрудники", "btn_duties_test": "Тема: обязанности"}
     __btn_people_test = KeyboardButton(buttons["btn_people_test"])
     __btn_duties_test = KeyboardButton(buttons["btn_duties_test"])
-    knowledge_test_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_people_test,
-                                                                      __btn_duties_test)
+    knowledge_test_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_people_test)

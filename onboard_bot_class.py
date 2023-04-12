@@ -24,6 +24,31 @@ class OnboardBot:
     def get_dp(cls) -> Dispatcher:
         return cls.__dp
 
+    @staticmethod
+    def get_random_photo() -> tuple:
+        person_ids = QUERY_GET(OnboardBot.__connection,
+                               query=f"""SELECT id FROM public."Employee" """, param=True)
+        random_id = random.choice(person_ids)[0]
+        random_photo = QUERY_GET(OnboardBot.__connection,
+                                 query=f"""SELECT photo FROM public."Employee" WHERE id = '{random_id}' """)
+        photo = InputFile(random_photo[0])
+        return photo, random_id
+
+    @staticmethod
+    async def validate_answer(message: types.Message, state: FSMContext):
+        person_id = await state.get_data()
+        real_full_name = QUERY_GET(OnboardBot.__connection,
+                                 query=f"""SELECT full_name FROM public."Employee" 
+                                 WHERE id = '{person_id["random_id"]}' """)
+        if real_full_name[0] == message.text:
+            QUERY(OnboardBot.__connection,
+                  query=f"""UPDATE public."Employee" SET person_test_result = person_test_result + 1 
+                  WHERE id_chat = '{message.chat.id}' """)
+            await message.answer("Совершенно верно!")
+        else:
+            await message.answer("Неверно!")
+
+
     """
     Блок стартового диалога
     """
@@ -31,17 +56,8 @@ class OnboardBot:
     @staticmethod
     @__dp.message_handler(commands=["start"], state="*")
     async def cmd_start(message: types.Message):
-        await StartDialogForm.start.set()
-        await message.reply("Выберите свой статус", reply_markup=JobTitleKeyboard.job_title_kb)
-
-    @staticmethod
-    @__dp.message_handler(Text, state=StartDialogForm.start)
-    async def cmd_start_choose(message: types.Message):
-        if message.text.lower() == JobTitleKeyboard.buttons["btn_employee"].lower():
-            await StartDialogForm.employee.set()
-            await message.reply("Укажите свое ФИО", reply_markup=types.ReplyKeyboardRemove())
-        else:
-            await message.reply("Неверная должность", reply_markup=JobTitleKeyboard.job_title_kb)
+        await StartDialogForm.employee.set()
+        await message.reply("Укажите свое ФИО", reply_markup=types.ReplyKeyboardRemove())
 
     @staticmethod
     @__dp.message_handler(Text, state=StartDialogForm.employee)
@@ -73,7 +89,9 @@ class OnboardBot:
     @__dp.message_handler(Text(equals=AboutOfficeKeyboard.buttons["btn_office_video"], ignore_case=True),
                           state=MainDialogForm.main)
     async def process_office_video(message: types.Message, state: FSMContext):
-        video = InputFile("./sourse/office_video.mp4")
+        video_path = QUERY_GET(OnboardBot.__connection,
+                               query=f"""SELECT video FROM public."Office" """, param=False)
+        video = InputFile(video_path[0])
         await OnboardBot.__bot.send_video(chat_id=message.chat.id, video=video)
         await state.finish()
         await MainDialogForm.main.set()
@@ -83,7 +101,9 @@ class OnboardBot:
     @__dp.message_handler(Text(equals=AboutOfficeKeyboard.buttons["btn_floor_plan"], ignore_case=True),
                           state=MainDialogForm.main)
     async def process_floor_plan(message: types.Message, state: FSMContext):
-        photo = InputFile("./sourse/floor_plan.jpg")
+        photo_path = QUERY_GET(OnboardBot.__connection,
+                               query=f"""SELECT plan FROM public."Office" """, param=False)
+        photo = InputFile(photo_path[0])
         await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
         await state.finish()
         await MainDialogForm.main.set()
@@ -287,74 +307,64 @@ class OnboardBot:
     @__dp.message_handler(Text(equals=KnowledgeTestKeyboard.buttons["btn_people_test"], ignore_case=True),
                           state=KnowledgeTestDialogForm.knowledge_test)
     async def process_test_knowledge_people_1(message: types.Message, state: FSMContext):
+        QUERY(OnboardBot.__connection,
+              query=f"""UPDATE public."Employee" SET person_test_result = 0 WHERE id_chat = '{message.chat.id}' """)
         await KnowledgeTestDialogForm.people_test_1.set()
         await message.answer("Напишите ФИО этого человека:", reply_markup=types.ReplyKeyboardRemove())
-        person_ids = QUERY_GET(OnboardBot.__connection,
-                               query=f"""SELECT id FROM public."Employee" """, param=True)
-        random_id = random.choice(person_ids)[0]
+
+        photo, random_id = OnboardBot.get_random_photo()
         await state.set_data({"random_id": random_id})
-        random_photo = QUERY_GET(OnboardBot.__connection,
-                                 query=f"""SELECT photo FROM public."Employee" WHERE id = '{random_id}' """)
-        photo = InputFile(random_photo[0])
         await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
 
     @staticmethod
     @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_1)
     async def process_test_knowledge_people_2(message: types.Message, state: FSMContext):
-        person_id = await state.get_data()
-        real_full_name = QUERY_GET(OnboardBot.__connection,
-                                 query=f"""SELECT full_name FROM public."Employee" 
-                                 WHERE id = '{person_id["random_id"]}' """)
-        if real_full_name[0] == message.text:
-            await message.answer("Совершенно верно!")
-        else:
-            await message.answer("Неверно!")
+        await OnboardBot.validate_answer(message, state)
 
         await KnowledgeTestDialogForm.people_test_2.set()
         await message.answer("Напишите ФИО этого человека:")
-        person_ids = QUERY_GET(OnboardBot.__connection,
-                               query=f"""SELECT id FROM public."Employee" """, param=True)
-        random_id = random.choice(person_ids)[0]
+
+        photo, random_id = OnboardBot.get_random_photo()
         await state.set_data({"random_id": random_id})
-        random_photo = QUERY_GET(OnboardBot.__connection,
-                                 query=f"""SELECT photo FROM public."Employee" WHERE id = '{random_id}' """)
-        photo = InputFile(random_photo[0])
         await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
 
     @staticmethod
     @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_2)
     async def process_test_knowledge_people_3(message: types.Message, state: FSMContext):
-        person_id = await state.get_data()
-        real_full_name = QUERY_GET(OnboardBot.__connection,
-                                 query=f"""SELECT full_name FROM public."Employee" 
-                                 WHERE id = '{person_id["random_id"]}' """)
-        if real_full_name[0] == message.text:
-            await message.answer("Совершенно верно!")
-        else:
-            await message.answer("Неверно!")
+        await OnboardBot.validate_answer(message, state)
 
         await KnowledgeTestDialogForm.people_test_3.set()
         await message.answer("Напишите ФИО этого человека:")
-        person_ids = QUERY_GET(OnboardBot.__connection,
-                               query=f"""SELECT id FROM public."Employee" """, param=True)
-        random_id = random.choice(person_ids)[0]
+
+        photo, random_id = OnboardBot.get_random_photo()
         await state.set_data({"random_id": random_id})
-        random_photo = QUERY_GET(OnboardBot.__connection,
-                                 query=f"""SELECT photo FROM public."Employee" WHERE id = '{random_id}' """)
-        photo = InputFile(random_photo[0])
         await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
 
     @staticmethod
     @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_3)
     async def process_test_knowledge_people_finish(message: types.Message, state: FSMContext):
-        person_id = await state.get_data()
-        real_full_name = QUERY_GET(OnboardBot.__connection,
-                                   query=f"""SELECT full_name FROM public."Employee" 
-                                   WHERE id = '{person_id["random_id"]}' """)
-        if real_full_name[0] == message.text:
-            await message.answer("Совершенно верно!")
-        else:
-            await message.answer("Неверно!")
+        await OnboardBot.validate_answer(message, state)
+
+        await state.finish()
+        await MainDialogForm.main.set()
+        await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
+
+    """
+    Блок задать вопрос
+    """
+    @staticmethod
+    @__dp.message_handler(Text(equals=MainKeyboard.buttons["btn_question"], ignore_case=True),
+                          state=MainDialogForm.main)
+    async def process_question(message: types.Message, state: FSMContext):
+        await message.answer("Напишите свой вопрос", reply_markup=types.ReplyKeyboardRemove())
+        await state.finish()
+        await QuestionDialog.question.set()
+
+    @staticmethod
+    @__dp.message_handler(Text, state=QuestionDialog.question)
+    async def process_question_message(message: types.Message, state: FSMContext):
+        QUERY(OnboardBot.__connection,
+              query=f"""UPDATE public."Employee" SET question = '{message.text}' WHERE id_chat = '{message.chat.id}' """)
         await state.finish()
         await MainDialogForm.main.set()
         await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
