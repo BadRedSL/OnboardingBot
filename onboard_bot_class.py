@@ -1,10 +1,8 @@
-import os
-
-import dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
+from aiogram.types.input_file import InputFile
 
 from form_classes import *
 from keyboards import *
@@ -18,10 +16,7 @@ class OnboardBot:
     __storage: MemoryStorage = MemoryStorage()
     __dp: Dispatcher = Dispatcher(__bot, storage=__storage)
 
-    __product_category: str = CompanyProductsKeyboard.buttons["btn_kids"]
-
-    __connection = psycopg2.connect(
-        "postgresql://icwsptef:gR5ODsKak2SM-nxdCgY6MpquxjL1u2b2@ziggy.db.elephantsql.com/icwsptef")
+    __connection = psycopg2.connect(os.getenv('DATABASE'))
     __connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
     @classmethod
@@ -33,22 +28,19 @@ class OnboardBot:
     """
 
     @staticmethod
-    @__dp.message_handler(commands=["start"])
+    @__dp.message_handler(commands=["start"], state="*")
     async def cmd_start(message: types.Message):
         await StartDialogForm.start.set()
         await message.reply("Выберите свой статус", reply_markup=JobTitleKeyboard.job_title_kb)
 
     @staticmethod
-    @__dp.message_handler(Text(equals=(JobTitleKeyboard.buttons["btn_admin"], JobTitleKeyboard.buttons["btn_employee"]),
-                               ignore_case=True),
-                          state=StartDialogForm.start)
+    @__dp.message_handler(Text, state=StartDialogForm.start)
     async def cmd_start_choose(message: types.Message):
         if message.text.lower() == JobTitleKeyboard.buttons["btn_employee"].lower():
             await StartDialogForm.employee.set()
-            await message.reply("Укажите свое ФИО")
-        elif message.text.lower() == JobTitleKeyboard.buttons["btn_admin"].lower():
-            await StartDialogForm.admin.set()
-            await message.reply("Введите пароль")
+            await message.reply("Укажите свое ФИО", reply_markup=types.ReplyKeyboardRemove())
+        else:
+            await message.reply("Неверная должность", reply_markup=JobTitleKeyboard.job_title_kb)
 
     @staticmethod
     @__dp.message_handler(Text, state=StartDialogForm.employee)
@@ -75,7 +67,8 @@ class OnboardBot:
     @__dp.message_handler(Text(equals=AboutOfficeKeyboard.buttons["btn_office_video"], ignore_case=True),
                           state=MainDialogForm.main)
     async def process_office_video(message: types.Message, state: FSMContext):
-        # выводим видео офиса
+        video = InputFile("./sourse/office_video.mp4")
+        await OnboardBot.__bot.send_video(chat_id=message.chat.id, video=video)
         await state.finish()
         await MainDialogForm.main.set()
         await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
@@ -84,7 +77,8 @@ class OnboardBot:
     @__dp.message_handler(Text(equals=AboutOfficeKeyboard.buttons["btn_floor_plan"], ignore_case=True),
                           state=MainDialogForm.main)
     async def process_floor_plan(message: types.Message, state: FSMContext):
-        # выводим план офиса
+        photo = InputFile("./sourse/floor_plan.jpg")
+        await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
         await state.finish()
         await MainDialogForm.main.set()
         await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
@@ -107,9 +101,10 @@ class OnboardBot:
     async def process_employees_all(message: types.Message, state: FSMContext):
         our_id = message.chat.id
         data = QUERY_GET(OnboardBot.__connection,
-                         query=f"""SELECT full_name, post FROM public."Employee" WHERE id_chat != '{our_id}'""",
+                         query=f"""SELECT full_name, competencies FROM public."Employee" WHERE id_chat != '{our_id}'""",
                          param=True)
-        await message.answer("\n".join([f"{i[0]} \t {i[1]}" for i in data]))
+        await message.answer(
+            "ФИО сотрудника \t|\t Компетенция сотрудника\n\n" + "\n\n".join([f"{i[0]} \t|\t {i[1]}" for i in data]))
         await message.answer("Выберите раздел", reply_markup=CommonEmployeesKeyboard.common_employees_kb)
 
     @staticmethod
@@ -118,11 +113,12 @@ class OnboardBot:
     async def process_employees_all(message: types.Message, state: FSMContext):
         our_id = message.chat.id
         our_department = QUERY_GET(OnboardBot.__connection,
-                                   query=f"""SELECT department FROM public."Employee" WHERE id_chat = '{our_id}'""")
+                                   query=f"""SELECT competencies FROM public."Employee" WHERE id_chat = '{our_id}'""")
         data = QUERY_GET(OnboardBot.__connection,
-                         query=f"""SELECT full_name, post FROM public."Employee" WHERE id_chat != '{our_id}' AND our_department = '{our_department}'""",
+                         query=f"""SELECT full_name, competencies FROM public."Employee" WHERE id_chat != '{our_id}'""",
                          param=True)
-        await message.answer("\n".join([f"{i[0]} \t {i[1]}" for i in data]))
+        await message.answer(
+            "ФИО сотрудника \t|\t Компетенция сотрудника\n\n" + "\n\n".join([f"{i[0]} \t {i[1]}" for i in data]))
         await message.answer("Выберите раздел", reply_markup=CommonEmployeesKeyboard.common_employees_kb)
 
     @staticmethod
@@ -130,17 +126,35 @@ class OnboardBot:
                           state=EmployeesDialogForm.employees)
     async def process_employees_detail(message: types.Message, state: FSMContext):
         await EmployeesDialogForm.detail.set()
-        await message.answer("Введите имя интересующего сотрудника")
+        await message.answer("Введите ФИО интересующего сотрудника", reply_markup=types.ReplyKeyboardRemove())
 
     @staticmethod
     @__dp.message_handler(Text, state=EmployeesDialogForm.detail)
     async def process_employees_detail_info(message: types.Message, state: FSMContext):
         data = QUERY_GET(OnboardBot.__connection,
-                         query=f"""SELECT * FROM public."Employee" WHERE full_name != '{message.text}'""")
-        await message.answer("\n".join([f"{i}" for i in data[2:]]))
-        await state.finish()
-        await MainDialogForm.main.set()
-        await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
+                         query=f"""SELECT * FROM public."Employee" WHERE full_name = '{message.text}'""")
+        if data:
+            photo = InputFile(data[4])
+            await OnboardBot.__bot.send_photo(chat_id=message.chat.id, photo=photo)
+            await message.answer(
+                f"""
+ФИО:
+{data[5]}
+
+Компетенции:
+{data[2]}  
+    
+Должностные обязанности:
+{data[3]}
+
+Достижения:
+{data[6]}     
+""")
+            await state.finish()
+            await MainDialogForm.main.set()
+            await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)
+        else:
+            await message.answer("Такого человека не существует, повторите ввод.")
 
     @staticmethod
     @__dp.message_handler(Text(equals=CommonEmployeesKeyboard.buttons["btn_to_main"], ignore_case=True),
@@ -200,13 +214,13 @@ class OnboardBot:
     async def process_products_kids_program(message: types.Message, state: FSMContext):
         # выводим информацию о программе
         product_category = await state.get_data()
-        if product_category == CompanyProductsKeyboard.buttons["btn_kids"].lower():
+        if product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_kids"].lower():
             print(1)
-        elif product_category == CompanyProductsKeyboard.buttons["btn_junior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_junior"].lower():
             print(2)
-        elif product_category == CompanyProductsKeyboard.buttons["btn_middle"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_middle"].lower():
             print(3)
-        elif product_category == CompanyProductsKeyboard.buttons["btn_senior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_senior"].lower():
             print(4)
         await state.finish()
         await MainDialogForm.main.set()
@@ -218,13 +232,13 @@ class OnboardBot:
     async def process_products_kids_teachers(message: types.Message, state: FSMContext):
         # выводим информацию о преподавателях
         product_category = await state.get_data()
-        if product_category == CompanyProductsKeyboard.buttons["btn_kids"].lower():
+        if product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_kids"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_junior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_junior"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_middle"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_middle"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_senior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_senior"].lower():
             pass
         await state.finish()
         await MainDialogForm.main.set()
@@ -236,13 +250,13 @@ class OnboardBot:
     async def process_products_kids_price(message: types.Message, state: FSMContext):
         # выводим информацию о ценах
         product_category = await state.get_data()
-        if product_category == CompanyProductsKeyboard.buttons["btn_kids"].lower():
+        if product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_kids"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_junior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_junior"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_middle"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_middle"].lower():
             pass
-        elif product_category == CompanyProductsKeyboard.buttons["btn_senior"].lower():
+        elif product_category["product_category"] == CompanyProductsKeyboard.buttons["btn_senior"].lower():
             pass
         await state.finish()
         await MainDialogForm.main.set()
@@ -283,13 +297,31 @@ class OnboardBot:
     @staticmethod
     @__dp.message_handler(Text(equals=KnowledgeTestKeyboard.buttons["btn_people_test"], ignore_case=True),
                           state=KnowledgeTestDialogForm.knowledge_test)
-    async def process_test_knowledge_people(message: types.Message, state: FSMContext):
-        await KnowledgeTestDialogForm.people_test.set()
+    async def process_test_knowledge_people_1(message: types.Message, state: FSMContext):
+        await KnowledgeTestDialogForm.people_test_1.set()
         await message.answer("Напишите ФИО этого человека:")
         # отправляется случайная фотка
 
     @staticmethod
-    @__dp.message_handler(Text, state=KnowledgeTestDialogForm.knowledge_test)
-    async def process_test_knowledge_people_answer(message: types.Message, state: FSMContext):
+    @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_1)
+    async def process_test_knowledge_people_2(message: types.Message, state: FSMContext):
+        await KnowledgeTestDialogForm.people_test_2.set()
         # выводим, был ли ответ пользователся правильным, или нет
-        pass
+        await message.answer("Напишите ФИО этого человека:")
+        # отправляется случайная фотка
+
+    @staticmethod
+    @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_2)
+    async def process_test_knowledge_people_3(message: types.Message, state: FSMContext):
+        await KnowledgeTestDialogForm.people_test_3.set()
+        # выводим, был ли ответ пользователся правильным, или нет
+        await message.answer("Напишите ФИО этого человека:")
+        # отправляется случайная фотка
+
+    @staticmethod
+    @__dp.message_handler(Text, state=KnowledgeTestDialogForm.people_test_3)
+    async def process_test_knowledge_people_finish(message: types.Message, state: FSMContext):
+        # выводим, был ли ответ пользователся правильным, или нет
+        await state.finish()
+        await MainDialogForm.main.set()
+        await message.answer("Что хотите узнать?", reply_markup=MainKeyboard.main_kb)

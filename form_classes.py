@@ -26,4 +26,6 @@ class ProductsDialogForm(StatesGroup):
 class KnowledgeTestDialogForm(StatesGroup):
     knowledge_test: State = State()
 
-    people_test: State = State()
+    people_test_1: State = State()
+    people_test_2: State = State()
+    people_test_3: State = State()

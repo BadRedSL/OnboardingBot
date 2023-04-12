@@ -5,8 +5,7 @@ class JobTitleKeyboard:
     buttons = {"btn_admin": "Администратор", "btn_employee": "Сотрудник"}
     __btn_admin = KeyboardButton(buttons["btn_admin"])
     __btn_employee = KeyboardButton(buttons["btn_employee"])
-    job_title_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_admin,
-                                                                 __btn_employee)
+    job_title_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(__btn_employee)
 
 
 class MainKeyboard:
